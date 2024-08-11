@@ -4,27 +4,17 @@
  #include <WiFi.h>
 #endif
 
-#include "DHTesp.h"
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 
-/**** DHT11 sensor Settings *******/
-#define DHTpin 2   //Set DHT pin as GPIO2
-DHTesp dht;
+/**** Sensor Settings *****/
+const int sensor = 2;
 
 /**** LED Settings *******/
 const int led = 5; //Set LED pin as GPIO5
 
-/****** WiFi Connection Details *******/
-const char* ssid = "";
-const char* password = "";
 
-/******* MQTT Broker Connection Details *******/
-const char* mqtt_server = "";
-const char* mqtt_username = "";
-const char* mqtt_password = "";
-const int mqtt_port = 8883;
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClientSecure espClient;
@@ -101,7 +91,7 @@ void reconnect() {
     if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
       Serial.println("connected");
 
-      client.subscribe("led_state");   // subscribe the topics here
+      //client.subscribe("led_state");   // subscribe the topics here
 
     } else {
       Serial.print("failed, rc=");
@@ -121,10 +111,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("Message arrived ["+String(topic)+"]"+incommingMessage);
 
   //--- check the incomming message
-    if( strcmp(topic,"led_state") == 0){
-     if (incommingMessage.equals("1")) digitalWrite(led, HIGH);   // Turn the LED on
-     else digitalWrite(led, LOW);  // Turn the LED off
-  }
+  //   if( strcmp(topic,"led_state") == 0){
+  //    if (incommingMessage.equals("1")) digitalWrite(led, HIGH);   // Turn the LED on
+  //    else digitalWrite(led, LOW);  // Turn the LED off
+  // }
 
 }
 
@@ -137,8 +127,8 @@ void publishMessage(const char* topic, String payload , boolean retained){
 /**** Application Initialisation Function******/
 void setup() {
 
-  dht.setup(DHTpin, DHTesp::DHT11); //Set up DHT11 sensor
   pinMode(led, OUTPUT); //set up LED
+  pinMode(sensor, INPUT); // set up sensor
   Serial.begin(9600);
   while (!Serial) delay(1);
   setup_wifi();
@@ -159,22 +149,23 @@ void loop() {
   if (!client.connected()) reconnect(); // check if client is connected
   client.loop();
 
-//read DHT11 temperature and humidity reading
-  delay(dht.getMinimumSamplingPeriod());
-  float humidity = dht.getHumidity();
-  float temperature = dht.getTemperature();
+  int movement = digitalRead(sensor);
+
+  if (movement == HIGH) {
+    digitalWrite(led, HIGH);
+  } else {
+    digitalWrite(led, LOW);
+  }
 
   DynamicJsonDocument doc(1024);
 
   doc["deviceId"] = "NodeMCU";
-  doc["siteId"] = "My Demo Lab";
-  doc["humidity"] = humidity;
-  doc["temperature"] = temperature;
+  doc["movement"] = movement;
 
   char mqtt_message[128];
   serializeJson(doc, mqtt_message);
 
-  publishMessage("esp8266_data", mqtt_message, true);
+  publishMessage("movement", mqtt_message, true);
 
   delay(5000);
 
