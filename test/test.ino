@@ -14,7 +14,15 @@ const int sensor = 2;
 /**** LED Settings *******/
 const int led = 5; //Set LED pin as GPIO5
 
+/****** WiFi Connection Details *******/
+const char* ssid = "";
+const char* password = "";
 
+/******* MQTT Broker Connection Details *******/
+const char* mqtt_server = "";
+const char* mqtt_username = "";
+const char* mqtt_password = "";
+const int mqtt_port = 8883;
 
 /**** Secure WiFi Connectivity Initialisation *****/
 WiFiClientSecure espClient;
