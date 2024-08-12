@@ -11,8 +11,12 @@
 /**** Sensor Settings *****/
 const int sensor = 2;
 
+/**** Buzzer Settings *****/
+const int buzzer = 0;
+
 /**** LED Settings *******/
-const int led = 5; //Set LED pin as GPIO5
+const int ledSensor = 5; //Set LED pin as GPIO5
+const int ledActive = 4; // Set LED pin as GPIO4
 
 /****** WiFi Connection Details *******/
 const char* ssid = "";
@@ -132,10 +136,30 @@ void publishMessage(const char* topic, String payload , boolean retained){
       Serial.println("Message publised ["+String(topic)+"]: "+payload);
 }
 
+/**** Method for LED and Buzzer Reaction to Movement *****/
+void movementReact(int movement){
+  if (movement == HIGH) {
+    for (int i = 0; i < 10; i++){
+      digitalWrite(ledSensor, HIGH);
+      digitalWrite(buzzer, HIGH);
+      delay(100);
+      digitalWrite(buzzer, LOW);
+      digitalWrite(ledSensor, LOW);
+      delay(100);
+    }
+  } else {
+    digitalWrite(buzzer, LOW);
+    digitalWrite(ledSensor, LOW);
+  }
+}
+
 /**** Application Initialisation Function******/
 void setup() {
 
-  pinMode(led, OUTPUT); //set up LED
+  pinMode(ledSensor, OUTPUT); //set up LED
+  pinMode(ledActive, OUTPUT); //set up LED
+  pinMode(buzzer, OUTPUT);
+  digitalWrite(ledActive, HIGH);
   pinMode(sensor, INPUT); // set up sensor
   Serial.begin(9600);
   while (!Serial) delay(1);
@@ -159,11 +183,7 @@ void loop() {
 
   int movement = digitalRead(sensor);
 
-  if (movement == HIGH) {
-    digitalWrite(led, HIGH);
-  } else {
-    digitalWrite(led, LOW);
-  }
+  movementReact(movement);
 
   DynamicJsonDocument doc(1024);
 
