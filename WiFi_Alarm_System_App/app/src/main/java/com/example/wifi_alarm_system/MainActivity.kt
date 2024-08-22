@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -54,7 +55,8 @@ class MainActivity : ComponentActivity() {
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = { isGranted -> hasNotificationPermission = isGranted}
                 )
-                Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.fillMaxSize().padding(16.dp).absoluteOffset(0.dp,(-100).dp),
+                    contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(onClick = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -80,12 +82,12 @@ class MainActivity : ComponentActivity() {
                         // Display the connection result
                         if (connectionResult.isNotEmpty()) {
                             Text(text = "Connection Result: $connectionResult")
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(text = "Last 5 Messages: (from newest)")
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
+                    }
+                }
+                Box(modifier = Modifier.fillMaxSize().padding(16.dp).absoluteOffset(0.dp,100.dp),
+                    contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         // Display the last five messages
                         messages.asReversed().forEach { message ->
                             if (message.length >= 2) {
