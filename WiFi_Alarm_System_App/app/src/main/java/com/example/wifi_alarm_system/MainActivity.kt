@@ -1,8 +1,15 @@
 package com.example.wifi_alarm_system
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.example.wifi_alarm_system.ui.theme.WiFi_Alarm_SystemTheme
 
 class MainActivity : ComponentActivity() {
@@ -31,9 +40,26 @@ class MainActivity : ComponentActivity() {
                 var messages by remember { mutableStateOf(listOf<String>()) }
                 var connectionResult by remember { mutableStateOf("") }
 
+                val context = LocalContext.current
+                var hasNotificationPermission by remember {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        mutableStateOf(
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) == PackageManager.PERMISSION_GRANTED)
+                    } else mutableStateOf(true)
+                }
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+                    onResult = { isGranted -> hasNotificationPermission = isGranted}
+                )
                 Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
                             // Connect and subscribe to the topic
                             connectionResult = connectionMaker.connectAndSubscribe { message ->
                                 // Update the list of messages
@@ -71,6 +97,17 @@ class MainActivity : ComponentActivity() {
                                 }
                                 val previousMovement = lastMovement
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(onClick = {
+                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                            }
+                            startActivity(intent)
+                        }) {
+                            Text(text = "Open Notification Settings")
                         }
                     }
                 }
