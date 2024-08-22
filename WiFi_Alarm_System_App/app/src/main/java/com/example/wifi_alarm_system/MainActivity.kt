@@ -100,9 +100,15 @@ class MainActivity : ComponentActivity() {
                                 val previousMovement = lastMovement
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 16.dp), // Adjust the bottom padding as needed
+                    contentAlignment = Alignment.BottomCenter // Align content at the bottom and center horizontally
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(onClick = {
                             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                                 putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
