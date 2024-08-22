@@ -13,7 +13,7 @@ class NotificationService(
 
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    fun showNotification(counter: Int){
+    fun showNotification(){
         val activityIntent = Intent(context, MainActivity::class.java)
         val activityPendingIntent = PendingIntent.getActivity(
             context,
@@ -21,22 +21,10 @@ class NotificationService(
             activityIntent,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
         )
-        val showIntent = PendingIntent.getBroadcast(
-            context,
-            2,
-            Intent(context, NotificationReceiver::class.java),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.baseline_warning_24)
-            .setContentTitle("Warning")
-            .setContentText("Alarm $counter")
+            .setContentTitle("!!! Alarm activated !!!")
             .setContentIntent(activityPendingIntent)
-            .addAction(
-                R.drawable.baseline_warning_24,
-                "Action",
-                showIntent
-            )
             .build()
 
         notificationManager.notify(1, notification)
