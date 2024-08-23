@@ -201,16 +201,29 @@ void loop() {
   
   movementReact(movement, previousMovement);
 
-  DynamicJsonDocument doc(1024);
+  if(starter) {
 
-  doc["deviceId"] = "NodeMCU";
-  doc["movement"] = movement;
+    DynamicJsonDocument doc(1024);
 
-  char mqtt_message[128];
-  serializeJson(doc, mqtt_message);
+    doc["deviceId"] = "NodeMCU";
+    doc["movement"] = movement;
 
-  publishMessage("movement", mqtt_message, true);
-  
+    char mqtt_message[128];
+    serializeJson(doc, mqtt_message);
+    publishMessage("movement", mqtt_message, true);
+
+  } else {
+
+    DynamicJsonDocument doc1(1024);
+    
+    doc1["deviceId"] = "NodeMCU";
+    doc1["Turning on"] = "turns";
+
+    char mqtt_message_on[128];
+    serializeJson(doc1, mqtt_message_on);
+    publishMessage("Turning on", mqtt_message_on, true);
+  }
+
   delay(5000);
 
   previousMovement = movement;
