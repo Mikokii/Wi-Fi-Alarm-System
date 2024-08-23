@@ -14,6 +14,10 @@ const int sensor = 2;
 /**** Buzzer Settings *****/
 const int buzzer = 0;
 
+/**** Beginning mode ****/
+int starter = 0;
+int previousMovement = HIGH;
+
 /**** LED Settings *******/
 const int ledSensor = 5; //Set LED pin as GPIO5
 const int ledActive = 4; // Set LED pin as GPIO4
@@ -137,8 +141,16 @@ void publishMessage(const char* topic, String payload , boolean retained){
 }
 
 /**** Method for LED and Buzzer Reaction to Movement *****/
-void movementReact(int movement){
-  if (movement == HIGH) {
+void movementReact(int movement, int previousMovement){
+  if (movement == HIGH && starter == 0 && previousMovement == HIGH) {
+    for (int i = 0; i < 10; i++){
+      digitalWrite(ledSensor, HIGH);
+      delay(100);
+      digitalWrite(buzzer, LOW);
+      digitalWrite(ledSensor, LOW);
+      delay(100);
+    }
+  } else if (movement == HIGH && starter == 1) {
     for (int i = 0; i < 10; i++){
       digitalWrite(ledSensor, HIGH);
       digitalWrite(buzzer, HIGH);
@@ -147,11 +159,15 @@ void movementReact(int movement){
       digitalWrite(ledSensor, LOW);
       delay(100);
     }
-  } else {
+  } else if (previousMovement == HIGH && movement == LOW && starter == 0) {
+    starter = 1;
+  } else if (movement == LOW && starter == 1) {
     digitalWrite(buzzer, LOW);
     digitalWrite(ledSensor, LOW);
   }
 }
+
+
 
 /**** Application Initialisation Function******/
 void setup() {
@@ -182,8 +198,8 @@ void loop() {
   client.loop();
 
   int movement = digitalRead(sensor);
-
-  movementReact(movement);
+  
+  movementReact(movement, previousMovement);
 
   DynamicJsonDocument doc(1024);
 
@@ -194,7 +210,9 @@ void loop() {
   serializeJson(doc, mqtt_message);
 
   publishMessage("movement", mqtt_message, true);
-
+  
   delay(5000);
+
+  previousMovement = movement;
 
 }
