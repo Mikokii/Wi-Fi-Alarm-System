@@ -97,9 +97,15 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     Text(text = "No movement detected")
                                 }
-                                val previousMovement = lastMovement
+                            }
+
+                        }
+                        if (messages.isNotEmpty() && messages.last().length >= 2) {
+                            if (messages.last()[messages.last().length - 2] == '1') {
+                                service.showNotification()
                             }
                         }
+
                     }
                 }
                 Box(
