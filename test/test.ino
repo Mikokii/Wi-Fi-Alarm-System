@@ -217,15 +217,14 @@ void loop() {
     DynamicJsonDocument doc1(1024);
     
     doc1["deviceId"] = "NodeMCU";
-    doc1["Turning on"] = "turns";
+    doc1["movement"] = 2;
 
     char mqtt_message_on[128];
     serializeJson(doc1, mqtt_message_on);
-    publishMessage("Turning on", mqtt_message_on, true);
+    publishMessage("movement", mqtt_message_on, true);
   }
 
   delay(5000);
-
   previousMovement = movement;
 
 }

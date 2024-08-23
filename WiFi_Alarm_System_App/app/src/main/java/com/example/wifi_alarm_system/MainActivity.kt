@@ -94,8 +94,10 @@ class MainActivity : ComponentActivity() {
                                 val lastMovement = message[message.length - 2]
                                 if (lastMovement == '1') {
                                     Text(text = "Movement detected")
-                                } else {
+                                } else if (lastMovement == '0'){
                                     Text(text = "No movement detected")
+                                } else {
+                                    Text(text = "Alarm system turns on")
                                 }
                             }
 
