@@ -1,10 +1,14 @@
 package com.example.wifi_alarm_system
 
 import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -37,7 +41,7 @@ class MainActivity : ComponentActivity() {
         val connectionMaker = ConnectionMaker()
         setContent {
             WiFi_Alarm_SystemTheme {
-
+                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 var movementMessages by remember { mutableStateOf(listOf<String>()) }
                 var startingMessage by remember { mutableStateOf("") }
                 var connectionResult by remember { mutableStateOf("") }
@@ -126,6 +130,7 @@ class MainActivity : ComponentActivity() {
                             if (movementMessages.isNotEmpty() && movementMessages.last().length >= 2) {
                                 if (movementMessages.last()[movementMessages.last().length - 2] == '1') {
                                     service.showNotification()
+                                    vibrate()
                                 }
                             }
                         }
@@ -149,6 +154,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+    private fun vibrate(){
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= 26){
+            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+        }
+        else{
+            vibrator.vibrate(500)
         }
     }
 }
