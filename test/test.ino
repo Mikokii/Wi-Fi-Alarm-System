@@ -16,7 +16,11 @@ const int buzzer = 0;
 
 /**** Beginning mode ****/
 int starter = 0;
+int startSended = 0;
 int previousMovement = HIGH;
+const char* STARTING = "starting";
+const char* MOVEMENT = "movement";
+const char* DEVICE_ID = "deviceID";
 
 /**** LED Settings *******/
 const int ledSensor = 5; //Set LED pin as GPIO5
@@ -201,27 +205,31 @@ void loop() {
   
   movementReact(movement, previousMovement);
 
+  DynamicJsonDocument doc(1024);
+  char mqtt_message[128];
+
   if(starter) {
+    if (!startSended){
+      doc[DEVICE_ID] = "NodeMCU";
+      doc[STARTING] = 0;
 
-    DynamicJsonDocument doc(1024);
+      serializeJson(doc, mqtt_message);
+      publishMessage(STARTING, mqtt_message, true);
+      doc.remove(STARTING);
+      startSended = 1;
+    }
+    doc[DEVICE_ID] = "NodeMCU";
+    doc[MOVEMENT] = movement;
 
-    doc["deviceId"] = "NodeMCU";
-    doc["movement"] = movement;
-
-    char mqtt_message[128];
     serializeJson(doc, mqtt_message);
-    publishMessage("movement", mqtt_message, true);
-
+    publishMessage(MOVEMENT, mqtt_message, true);
   } else {
 
-    DynamicJsonDocument doc1(1024);
-    
-    doc1["deviceId"] = "NodeMCU";
-    doc1["movement"] = 2;
+    doc[DEVICE_ID] = "NodeMCU";
+    doc[STARTING] = 1;
 
-    char mqtt_message_on[128];
-    serializeJson(doc1, mqtt_message_on);
-    publishMessage("movement", mqtt_message_on, true);
+    serializeJson(doc, mqtt_message);
+    publishMessage(STARTING, mqtt_message, true);
   }
 
   delay(5000);

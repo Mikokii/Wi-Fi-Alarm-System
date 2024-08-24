@@ -38,7 +38,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             WiFi_Alarm_SystemTheme {
 
-                var messages by remember { mutableStateOf(listOf<String>()) }
+                var movementMessages by remember { mutableStateOf(listOf<String>()) }
+                var startingMessage by remember { mutableStateOf("") }
                 var connectionResult by remember { mutableStateOf("") }
 
                 val context = LocalContext.current
@@ -55,7 +56,10 @@ class MainActivity : ComponentActivity() {
                     contract = ActivityResultContracts.RequestPermission(),
                     onResult = { isGranted -> hasNotificationPermission = isGranted}
                 )
-                Box(modifier = Modifier.fillMaxSize().padding(16.dp).absoluteOffset(0.dp,(-100).dp),
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .absoluteOffset(0.dp, (-100).dp),
                     contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(onClick = {
@@ -64,11 +68,21 @@ class MainActivity : ComponentActivity() {
                             }
                             // Connect and subscribe to the topic
                             connectionResult = connectionMaker.connectAndSubscribe { message ->
-                                // Update the list of messages
-                                messages = (messages + message).takeLast(5)
+                                when {
+                                    "movement" in message -> {
+                                        // Update the list of movement messages
+                                        movementMessages = (movementMessages + message).takeLast(5)
+                                    }
+                                    "starting" in message -> {
+                                        // Update the list of startin messages
+                                        startingMessage = message
+                                    }
+                                    else -> {
+                                        startingMessage = "ERROR"
+                                    }
+                                }
                             }
-                            // Show the latest message in the notification
-                            //service.showNotification(Counter.value)
+
                         }) {
                             Text(text = "Connect and Subscribe")
                         }
@@ -85,29 +99,36 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                Box(modifier = Modifier.fillMaxSize().padding(16.dp).absoluteOffset(0.dp,100.dp),
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .absoluteOffset(0.dp, 100.dp),
                     contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Display the last five messages
-                        messages.asReversed().forEach { message ->
-                            if (message.length >= 2) {
-                                val lastMovement = message[message.length - 2]
-                                if (lastMovement == '1') {
-                                    Text(text = "Movement detected")
-                                } else if (lastMovement == '0'){
-                                    Text(text = "No movement detected")
-                                } else {
-                                    Text(text = "Alarm system turns on")
+                        if (startingMessage == "ERROR"){
+                            Text(text = "ERROR")
+                        } else if (startingMessage.isNotEmpty() && startingMessage.length >= 2 && startingMessage[startingMessage.length - 2] == '1'){
+                            Text(text = "Alarm system is starting")
+                        } else {
+                            // Display the last five messages
+                            movementMessages.asReversed().forEach { movementMessage ->
+                                if (movementMessage.length >= 2) {
+                                    val lastMovement = movementMessage[movementMessage.length - 2]
+                                    if (lastMovement == '1') {
+                                        Text(text = "Movement detected")
+                                    } else if (lastMovement == '0'){
+                                        Text(text = "No movement detected")
+                                    } else {
+                                        Text(text = "ERROR")
+                                    }
                                 }
                             }
-
-                        }
-                        if (messages.isNotEmpty() && messages.last().length >= 2) {
-                            if (messages.last()[messages.last().length - 2] == '1') {
-                                service.showNotification()
+                            if (movementMessages.isNotEmpty() && movementMessages.last().length >= 2) {
+                                if (movementMessages.last()[movementMessages.last().length - 2] == '1') {
+                                    service.showNotification()
+                                }
                             }
                         }
-
                     }
                 }
                 Box(
