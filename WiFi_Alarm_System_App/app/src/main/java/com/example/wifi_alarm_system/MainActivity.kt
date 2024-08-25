@@ -153,6 +153,20 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 64.dp), // Adjust the bottom padding as needed
+                    contentAlignment = Alignment.BottomCenter // Align content at the bottom and center horizontally
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Button(onClick = {
+                            val publishResult = connectionMaker.publishMessage("sound", "1")
+                        }) {
+                            Text(text = "Sound")
+                        }
+                    }
+                }
             }
         }
     }
