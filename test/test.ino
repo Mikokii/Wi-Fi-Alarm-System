@@ -22,6 +22,10 @@ const char* STARTING = "starting";
 const char* MOVEMENT = "movement";
 const char* DEVICE_ID = "deviceID";
 
+/******* LWT Settings *******/
+const char* LWT_TOPIC = "ON";
+const char* LWT_MESSAGE = "{\"deviceID\":\"NodeMCU\",\"ON\":0}";
+
 /**** LED Settings *******/
 const int ledSensor = 5; //Set LED pin as GPIO5
 const int ledActive = 4; // Set LED pin as GPIO4
@@ -108,7 +112,7 @@ void reconnect() {
     String clientId = "ESP8266Client-";   // Create a random client ID
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
-    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
+    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password, LWT_TOPIC, 1, true, LWT_MESSAGE)) {
       Serial.println("connected");
 
       //client.subscribe("led_state");   // subscribe the topics here
@@ -208,6 +212,12 @@ void loop() {
   DynamicJsonDocument doc(1024);
   char mqtt_message[128];
 
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[LWT_TOPIC] = 1;
+  serializeJson(doc, mqtt_message);
+  publishMessage(LWT_TOPIC, mqtt_message, true);
+  doc.remove(LWT_TOPIC);
+  
   if(starter) {
     if (!startSended){
       doc[DEVICE_ID] = "NodeMCU";
