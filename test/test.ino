@@ -21,6 +21,7 @@ int previousMovement = HIGH;
 const char* STARTING = "starting";
 const char* MOVEMENT = "movement";
 const char* DEVICE_ID = "deviceID";
+const char* SOUND = "sound";
 
 /******* LWT Settings *******/
 const char* LWT_TOPIC = "ON";
@@ -115,7 +116,7 @@ void reconnect() {
     if (client.connect(clientId.c_str(), mqtt_username, mqtt_password, LWT_TOPIC, 1, true, LWT_MESSAGE)) {
       Serial.println("connected");
 
-      //client.subscribe("led_state");   // subscribe the topics here
+      client.subscribe(SOUND);   // subscribe the topics here
 
     } else {
       Serial.print("failed, rc=");
@@ -135,10 +136,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("Message arrived ["+String(topic)+"]"+incommingMessage);
 
   //--- check the incomming message
-  //   if( strcmp(topic,"led_state") == 0){
-  //    if (incommingMessage.equals("1")) digitalWrite(led, HIGH);   // Turn the LED on
-  //    else digitalWrite(led, LOW);  // Turn the LED off
-  // }
+  if( strcmp(topic,SOUND) == 0){
+      if (incommingMessage.equals("1")) digitalWrite(ledSensor, HIGH);   // Turn the LED on
+      else digitalWrite(ledSensor, LOW);  // Turn the LED off
+  }
 
 }
 
