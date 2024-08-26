@@ -117,6 +117,13 @@ void reconnect() {
       Serial.println("connected");
 
       client.subscribe(SOUND);   // subscribe the topics here
+      DynamicJsonDocument doc(1024);
+      char mqtt_message[128];
+      doc[DEVICE_ID] = "NodeMCU";
+      doc[SOUND] = 1;
+
+      serializeJson(doc, mqtt_message);
+      publishMessage(SOUND, mqtt_message, true);
 
     } else {
       Serial.print("failed, rc=");
@@ -139,8 +146,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(secondLastChar);
   //--- check the incomming message
   if( strcmp(topic,SOUND) == 0){
-      if (secondLastChar == '1') buzzerControl = HIGH;   // Turn the buzzer on
-      else buzzerControl = LOW;  // Turn the buzzer off
+      if (secondLastChar == '1') buzzerControl = LOW;   // Turn the buzzer off
+      else buzzerControl = HIGH;  // Turn the buzzer on
   }
 
 }
