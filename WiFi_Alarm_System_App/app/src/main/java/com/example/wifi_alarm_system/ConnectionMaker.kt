@@ -39,6 +39,14 @@ class ConnectionMaker {
                 }
                 .send()
 
+            client.toAsync().subscribeWith()
+                .topicFilter("ON")
+                .callback { publish: Mqtt5Publish ->
+                    val message = String(publish.payloadAsBytes)
+                    onMessageReceived(message)
+                }
+                .send()
+
             connAckMessage.reasonCode.toString()
         } catch (e: Exception){
             e.message ?: "Unknown error"

@@ -1,7 +1,6 @@
 package com.example.wifi_alarm_system
 
 import android.Manifest
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -41,10 +40,11 @@ class MainActivity : ComponentActivity() {
         val connectionMaker = ConnectionMaker()
         setContent {
             WiFi_Alarm_SystemTheme {
-                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 var movementMessages by remember { mutableStateOf(listOf<String>()) }
                 var startingMessage by remember { mutableStateOf("") }
+                var onMessage by remember { mutableStateOf("") }
                 var connectionResult by remember { mutableStateOf("") }
+                var connectionError = false
 
                 val context = LocalContext.current
                 var hasNotificationPermission by remember {
@@ -76,13 +76,20 @@ class MainActivity : ComponentActivity() {
                                     "movement" in message -> {
                                         // Update the list of movement messages
                                         movementMessages = (movementMessages + message).takeLast(5)
+                                        connectionError = false
                                     }
                                     "starting" in message -> {
-                                        // Update the list of startin messages
+                                        // Update the starting message
                                         startingMessage = message
+                                        connectionError = false
+                                    }
+                                    "ON" in message -> {
+                                        //Update the ON message
+                                        onMessage = message
+                                        connectionError = false
                                     }
                                     else -> {
-                                        startingMessage = "ERROR"
+                                        connectionError = true
                                     }
                                 }
                             }
@@ -109,30 +116,37 @@ class MainActivity : ComponentActivity() {
                     .absoluteOffset(0.dp, 100.dp),
                     contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (startingMessage == "ERROR"){
+                        if (connectionError){
                             Text(text = "ERROR")
-                        } else if (startingMessage.isNotEmpty() && startingMessage.length >= 2 && startingMessage[startingMessage.length - 2] == '1'){
-                            Text(text = "Alarm system is starting")
-                        } else {
-                            // Display the last five messages
-                            movementMessages.asReversed().forEach { movementMessage ->
-                                if (movementMessage.length >= 2) {
-                                    val lastMovement = movementMessage[movementMessage.length - 2]
-                                    if (lastMovement == '1') {
-                                        Text(text = "Movement detected")
-                                    } else if (lastMovement == '0'){
-                                        Text(text = "No movement detected")
-                                    } else {
-                                        Text(text = "ERROR")
+                        } else if(onMessage.isNotEmpty() && onMessage.length >= 2 && onMessage[onMessage.length-2] == '1'){
+                            Text(text = "Device is ON")
+                            if (startingMessage.isNotEmpty() && startingMessage.length >= 2 && startingMessage[startingMessage.length - 2] == '1'){
+                                Text(text = "Alarm system is starting")
+                            } else {
+                                // Display the last five messages
+                                movementMessages.asReversed().forEach { movementMessage ->
+                                    if (movementMessage.length >= 2) {
+                                        val lastMovement = movementMessage[movementMessage.length - 2]
+                                        if (lastMovement == '1') {
+                                            Text(text = "Movement detected")
+                                        } else if (lastMovement == '0'){
+                                            Text(text = "No movement detected")
+                                        } else {
+                                            Text(text = "ERROR")
+                                        }
+                                    }
+                                }
+                                if (movementMessages.isNotEmpty() && movementMessages.last().length >= 2) {
+                                    if (movementMessages.last()[movementMessages.last().length - 2] == '1') {
+                                        service.showNotification()
+                                        vibrate()
                                     }
                                 }
                             }
-                            if (movementMessages.isNotEmpty() && movementMessages.last().length >= 2) {
-                                if (movementMessages.last()[movementMessages.last().length - 2] == '1') {
-                                    service.showNotification()
-                                    vibrate()
-                                }
-                            }
+                        } else if (onMessage.isNotEmpty() && onMessage.length >= 2 && onMessage[onMessage.length-2] == '0'){
+                            Text(text = "Device is OFF")
+                        } else {
+                            Text(text = "Device is not connected")
                         }
                     }
                 }
