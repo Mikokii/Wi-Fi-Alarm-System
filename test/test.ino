@@ -13,7 +13,7 @@ const int sensor = 2;
 
 /**** Buzzer Settings *****/
 const int buzzer = 0;
-
+int buzzerControl = HIGH;
 /**** Beginning mode ****/
 int starter = 0;
 int startSended = 0;
@@ -135,10 +135,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   Serial.println("Message arrived ["+String(topic)+"]"+incommingMessage);
 
+  char secondLastChar = incommingMessage[incommingMessage.length() - 2];
+  Serial.println(secondLastChar);
   //--- check the incomming message
   if( strcmp(topic,SOUND) == 0){
-      if (incommingMessage.equals("1")) digitalWrite(ledSensor, HIGH);   // Turn the LED on
-      else digitalWrite(ledSensor, LOW);  // Turn the LED off
+      if (secondLastChar == '1') buzzerControl = HIGH;   // Turn the buzzer on
+      else buzzerControl = LOW;  // Turn the buzzer off
   }
 
 }
@@ -162,7 +164,7 @@ void movementReact(int movement, int previousMovement){
   } else if (movement == HIGH && starter == 1) {
     for (int i = 0; i < 10; i++){
       digitalWrite(ledSensor, HIGH);
-      digitalWrite(buzzer, HIGH);
+      digitalWrite(buzzer, buzzerControl);
       delay(100);
       digitalWrite(buzzer, LOW);
       digitalWrite(ledSensor, LOW);
