@@ -47,6 +47,14 @@ class ConnectionMaker {
                 }
                 .send()
 
+            client.toAsync().subscribeWith()
+                .topicFilter("sound")
+                .callback { publish: Mqtt5Publish ->
+                    val message = String(publish.payloadAsBytes)
+                    onMessageReceived(message)
+                }
+                .send()
+
             connAckMessage.reasonCode.toString()
         } catch (e: Exception){
             e.message ?: "Unknown error"
@@ -59,7 +67,8 @@ class ConnectionMaker {
                 .topic(topic)
                 .payload(message.toByteArray())
                 .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
-                .qos(MqttQos.AT_LEAST_ONCE)
+                .qos(MqttQos.AT_MOST_ONCE)
+                .retain(true)
                 .build()
             client.toBlocking().publish(publishMessage)
             "Message published to $topic"

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,14 +40,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val service = NotificationService(applicationContext)
         val connectionMaker = ConnectionMaker()
-        var messageBuzzer = 1
         setContent {
             WiFi_Alarm_SystemTheme {
                 var movementMessages by remember { mutableStateOf(listOf<String>()) }
                 var startingMessage by remember { mutableStateOf("") }
                 var onMessage by remember { mutableStateOf("") }
                 var connectionResult by remember { mutableStateOf("") }
-                var connectionError = false
+                var connectionError by remember { mutableStateOf(false) }
+                var soundMessage by remember { mutableIntStateOf(0) }
+                var tmpMessage by remember { mutableStateOf("") }
 
                 val context = LocalContext.current
                 var hasNotificationPermission by remember {
@@ -89,6 +91,16 @@ class MainActivity : ComponentActivity() {
                                         //Update the ON message
                                         onMessage = message
                                         connectionError = false
+                                    }
+                                    "sound" in message -> {
+                                        tmpMessage = message
+                                        //Update the sound message
+                                        if (message.length >= 2){
+                                            soundMessage = message[message.length-2].toString().toInt()
+                                            connectionError = false
+                                        } else {
+                                            connectionError = true
+                                        }
                                     }
                                     else -> {
                                         connectionError = true
@@ -169,7 +181,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                if (connectionResult.isNotEmpty()) {
+                if (connectionResult.isNotEmpty() && startingMessage.isNotEmpty() && startingMessage.length >= 2 && startingMessage[startingMessage.length - 2] == '0') {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -178,15 +190,19 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Button(onClick = {
-                                messageBuzzer = messageBuzzer xor 1
-
+                                soundMessage = soundMessage xor 1
                                 val json = JSONObject()
                                 json.put("deviceID", "mein Handy")
-                                json.put("sound", messageBuzzer)
+                                json.put("sound", soundMessage)
                                 val mqttMessage = json.toString()
                                 val publishResult = connectionMaker.publishMessage("sound", mqttMessage)
                             }) {
-                                Text(text = "Sound")
+                                if (soundMessage == 1){
+                                    Text(text = "Sound is ON")
+                                }
+                                else {
+                                    Text(text = "Sound is OFF")
+                                }
                             }
                         }
                     }
