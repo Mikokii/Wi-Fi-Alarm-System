@@ -32,12 +32,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.wifi_alarm_system.ui.theme.WiFi_Alarm_SystemTheme
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val service = NotificationService(applicationContext)
         val connectionMaker = ConnectionMaker()
+        var messageBuzzer = 1
         setContent {
             WiFi_Alarm_SystemTheme {
                 var movementMessages by remember { mutableStateOf(listOf<String>()) }
@@ -167,17 +169,25 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 64.dp), // Adjust the bottom padding as needed
-                    contentAlignment = Alignment.BottomCenter // Align content at the bottom and center horizontally
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Button(onClick = {
-                            val publishResult = connectionMaker.publishMessage("sound", "1")
-                        }) {
-                            Text(text = "Sound")
+                if (connectionResult.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 64.dp), // Adjust the bottom padding as needed
+                        contentAlignment = Alignment.BottomCenter // Align content at the bottom and center horizontally
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Button(onClick = {
+                                messageBuzzer = messageBuzzer xor 1
+
+                                val json = JSONObject()
+                                json.put("deviceID", "mein Handy")
+                                json.put("sound", messageBuzzer)
+                                val mqttMessage = json.toString()
+                                val publishResult = connectionMaker.publishMessage("sound", mqttMessage)
+                            }) {
+                                Text(text = "Sound")
+                            }
                         }
                     }
                 }
