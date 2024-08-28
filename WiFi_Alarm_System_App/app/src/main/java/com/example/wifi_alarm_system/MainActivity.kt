@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.wifi_alarm_system.ui.theme.WiFi_Alarm_SystemTheme
@@ -167,8 +170,8 @@ class MainActivity : ComponentActivity() {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = 16.dp), // Adjust the bottom padding as needed
-                    contentAlignment = Alignment.BottomCenter // Align content at the bottom and center horizontally
+                        .padding(bottom = 16.dp, start = 32.dp), // Adjust the bottom padding as needed
+                    contentAlignment = Alignment.BottomStart // Align content at the bottom and center horizontally
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(onClick = {
@@ -177,7 +180,11 @@ class MainActivity : ComponentActivity() {
                             }
                             startActivity(intent)
                         }) {
-                            Text(text = "Open Notification Settings")
+                            Icon(painter = painterResource(
+                                id = R.drawable.baseline_settings_24),
+                                contentDescription = "Notification Settings",
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }
@@ -185,8 +192,8 @@ class MainActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(bottom = 64.dp), // Adjust the bottom padding as needed
-                        contentAlignment = Alignment.BottomCenter // Align content at the bottom and center horizontally
+                            .padding(bottom = 16.dp, end = 32.dp), // Adjust the padding as needed
+                        contentAlignment = Alignment.BottomEnd // Align content
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Button(onClick = {
@@ -198,10 +205,18 @@ class MainActivity : ComponentActivity() {
                                 val publishResult = connectionMaker.publishMessage("sound", mqttMessage)
                             }) {
                                 if (soundMessage == 1){
-                                    Text(text = "Sound is ON")
+                                    Icon(painter = painterResource(
+                                        id = R.drawable.baseline_volume_up_24),
+                                        contentDescription = "Sound ON",
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
                                 else {
-                                    Text(text = "Sound is OFF")
+                                    Icon(painter = painterResource(
+                                        id = R.drawable.baseline_volume_off_24),
+                                        contentDescription = "Sound OFF",
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
                             }
                         }
