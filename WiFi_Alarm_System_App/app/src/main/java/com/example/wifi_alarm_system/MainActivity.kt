@@ -45,13 +45,12 @@ class MainActivity : ComponentActivity() {
         val connectionMaker = ConnectionMaker()
         setContent {
             WiFi_Alarm_SystemTheme {
-                var movementMessages by remember { mutableStateOf(listOf<String>()) }
-                var startingMessage by remember { mutableStateOf("") }
-                var onMessage by remember { mutableStateOf("") }
+                var movementMessages by remember { mutableStateOf(listOf<Int>()) }
+                var startingMessage by remember { mutableIntStateOf(-1) }
+                var onMessage by remember { mutableIntStateOf(-1) }
                 var connectionResult by remember { mutableStateOf("") }
                 var connectionError by remember { mutableStateOf(false) }
-                var soundMessage by remember { mutableIntStateOf(0) }
-                var tmpMessage by remember { mutableStateOf("") }
+                var soundMessage by remember { mutableIntStateOf(-1) }
 
                 val context = LocalContext.current
                 var hasNotificationPermission by remember {
@@ -82,21 +81,36 @@ class MainActivity : ComponentActivity() {
                                 when {
                                     "movement" in message -> {
                                         // Update the list of movement messages
-                                        movementMessages = (movementMessages + message).takeLast(5)
-                                        connectionError = false
+                                        if (message.length >= 2) {
+                                            movementMessages =
+                                                (movementMessages + message[message.length-2].toString().toInt()).takeLast(5)
+                                            connectionError = false
+                                        }
+                                        else {
+                                            connectionError = true
+                                        }
                                     }
                                     "starting" in message -> {
                                         // Update the starting message
-                                        startingMessage = message
-                                        connectionError = false
+                                        if (message.length >= 2) {
+                                            startingMessage = message[message.length-2].toString().toInt()
+                                            connectionError = false
+                                        }
+                                        else {
+                                            connectionError = true
+                                        }
                                     }
                                     "ON" in message -> {
                                         //Update the ON message
-                                        onMessage = message
-                                        connectionError = false
+                                        if (message.length >= 2) {
+                                            onMessage = message[message.length-2].toString().toInt()
+                                            connectionError = false
+                                        }
+                                        else {
+                                            connectionError = true
+                                        }
                                     }
                                     "sound" in message -> {
-                                        tmpMessage = message
                                         //Update the sound message
                                         if (message.length >= 2){
                                             soundMessage = message[message.length-2].toString().toInt()
@@ -117,12 +131,11 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // Display the connection result
                         if (connectionResult.isEmpty()) {
                             Text(text = "No Connection")
                         }
-
-                        // Display the connection result
-                        if (connectionResult.isNotEmpty()) {
+                        else {
                             Text(text = "Connection Result: $connectionResult")
                         }
                     }
@@ -135,32 +148,29 @@ class MainActivity : ComponentActivity() {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         if (connectionError){
                             Text(text = "ERROR")
-                        } else if(onMessage.isNotEmpty() && onMessage.length >= 2 && onMessage[onMessage.length-2] == '1'){
+                        } else if(onMessage == 1){
                             Text(text = "Device is ON")
-                            if (startingMessage.isNotEmpty() && startingMessage.length >= 2 && startingMessage[startingMessage.length - 2] == '1'){
+                            if (startingMessage == 1){
                                 Text(text = "Alarm system is starting")
                             } else {
                                 // Display the last five messages
                                 movementMessages.asReversed().forEach { movementMessage ->
-                                    if (movementMessage.length >= 2) {
-                                        val lastMovement = movementMessage[movementMessage.length - 2]
-                                        if (lastMovement == '1') {
-                                            Text(text = "Movement detected")
-                                        } else if (lastMovement == '0'){
-                                            Text(text = "No movement detected")
-                                        } else {
-                                            Text(text = "ERROR")
-                                        }
+                                    if (movementMessage == 1) {
+                                        Text(text = "Movement detected")
+                                    } else if (movementMessage == 0){
+                                        Text(text = "No movement detected")
+                                    } else {
+                                        Text(text = "ERROR")
                                     }
                                 }
-                                if (movementMessages.isNotEmpty() && movementMessages.last().length >= 2) {
-                                    if (movementMessages.last()[movementMessages.last().length - 2] == '1') {
+                                if (movementMessages.isNotEmpty()) {
+                                    if (movementMessages.last() == 1) {
                                         service.showNotification()
                                         vibrate()
                                     }
                                 }
                             }
-                        } else if (onMessage.isNotEmpty() && onMessage.length >= 2 && onMessage[onMessage.length-2] == '0'){
+                        } else if (onMessage == 0){
                             Text(text = "Device is OFF")
                         } else {
                             Text(text = "Device is not connected")
@@ -188,7 +198,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-                if (connectionResult.isNotEmpty() && startingMessage.isNotEmpty() && startingMessage.length >= 2 && startingMessage[startingMessage.length - 2] == '0') {
+                if (connectionResult.isNotEmpty() && startingMessage == 0 && onMessage == 1) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
