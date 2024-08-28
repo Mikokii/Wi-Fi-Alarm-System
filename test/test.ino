@@ -11,15 +11,19 @@
 /**** Movement Detector Settings *****/
 const int sensorMovement = 2; 
 int movement;
+int previousMovement = HIGH;
 
 /**** Buzzer Settings *****/
 const int buzzer = 0;
 int buzzerControl = HIGH; //for adjustement depending on the message
 
+/**** LED Pins *******/
+const int ledSensor = 5; //Set LED pin as GPIO5
+const int ledActive = 4; // Set LED pin as GPIO4
+
 /**** Activating Alarm System ****/
 int starter = 0;
 int startSent = 0;
-int previousMovement = HIGH;
 
 /*** MQTT Messages Topics ***/
 const char* STARTING = "starting";
@@ -27,13 +31,17 @@ const char* MOVEMENT = "movement";
 const char* DEVICE_ID = "deviceID";
 const char* SOUND = "sound";
 
+/*** MQTT Recieved Messages ***/
+char receivedMessage;
+String incomingMessage = "";
+
+/*** MQTT Publishing Messages ***/
+DynamicJsonDocument doc(1024);
+char mqtt_message[128];
+
 /******* LWT Settings *******/
 const char* LWT_TOPIC = "ON";
 const char* LWT_MESSAGE = "{\"deviceID\":\"NodeMCU\",\"ON\":0}";
-
-/**** LED Pins *******/
-const int ledSensor = 5; //Set LED pin as GPIO5
-const int ledActive = 4; // Set LED pin as GPIO4
 
 /****** WiFi Connection Details *******/
 const char* ssid = "";
@@ -91,147 +99,16 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----
 )EOF";
 
-/************* Connect to WiFi ***********/
-void setup_wifi() {
-
-  delay(10);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-  }
-
-  randomSeed(micros());
-
-  Serial.println("\nWiFi connected\nIP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-/************* Connect to MQTT Broker ***********/
-void reconnect() {
-  while (!client.connected()) {
-
-    Serial.print("Attempting MQTT connection...");
-    String clientId = "ESP8266Client-";
-    clientId += String(random(0xffff), HEX);
-    
-    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password, LWT_TOPIC, 1, true, LWT_MESSAGE)) {
-      Serial.println("connected");
-
-      client.subscribe(SOUND);   // subscribe the topics here
-      DynamicJsonDocument doc(1024);
-      char mqtt_message[128];
-      doc[DEVICE_ID] = "NodeMCU";
-      doc[STARTING] = 1;
-
-      serializeJson(doc, mqtt_message);
-      publishMessage(STARTING, mqtt_message, true);
-      doc.remove(STARTING);
-      
-      doc[DEVICE_ID] = "NodeMCU";
-      doc[SOUND] = 1;
-
-      serializeJson(doc, mqtt_message);
-      publishMessage(SOUND, mqtt_message, true);
-
-    } else {
-      Serial.print(client.state());
-      delay(5000);
-    }
-  }
-}
-
-/***** Call back Method for Receiving MQTT messages and Switching LED ****/
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  String incomingMessage = "";
-  for (int i = 0; i < length; i++) incomingMessage+=(char)payload[i];
-
-  Serial.println("Message arrived ["+String(topic)+"]"+incomingMessage);
-
-  char secondLastChar = incomingMessage[incomingMessage.length() - 2];
-  Serial.println(secondLastChar);
-  //--- check the incomming message
-  if( strcmp(topic,SOUND) == 0){
-      if (secondLastChar == '1') buzzerControl = HIGH;   // Turn the buzzer off
-      else buzzerControl = LOW;  // Turn the buzzer on
-  }
-
-}
-
-/**** Method for Publishing MQTT Messages **********/
-void publishMessage(const char* topic, String payload , boolean retained){
-  client.publish(topic, payload.c_str(), true);
-}
-
-/**** Method For LED and Buzzer Reaction To Movement *****/
-void movementReact() {
-  movement = digitalRead(sensorMovement);
-  if (movement == HIGH && starter == 0 && previousMovement == HIGH) {
-    startMovementDetector();
-  } else if (movement == HIGH && starter == 1) {
-    alarmActivated();
-  } else if (previousMovement == HIGH && movement == LOW && starter == 0) {
-    starter = 1;
-  } else if (movement == LOW && starter == 1) {
-    alarmNotActivated();
-  }
-}
-
-/*** Method for starting the alarm system ***/
-void startMovementDetector() {
-  digitalWrite(buzzer, LOW);
-  for (int i = 0; i < 10; i++) {
-    digitalWrite(ledSensor, HIGH);
-    delay(100);
-    digitalWrite(ledSensor, LOW);
-    delay(100);
-  }
-}
-
-/*** Method for no movement detected ***/
-void alarmNotActivated() {
-  digitalWrite(buzzer, LOW);
-  digitalWrite(ledSensor, LOW);
-}
-
-/*** Method for activating the alarm system ***/
-void alarmActivated() {
-  for (int i = 0; i < 10; i++){
-    digitalWrite(ledSensor, HIGH);
-    digitalWrite(buzzer, buzzerControl);
-    delay(100);
-    digitalWrite(ledSensor, LOW);
-    digitalWrite(buzzer, LOW);
-    delay(100);
-  }
-}
-
-/*** Method for the information that the system is on ***/
-void handleONMessage() {
-  DynamicJsonDocument doc(1024);
-  char lwtMessage[128];
-
-  doc[DEVICE_ID] = "NodeMCU";
-  doc[LWT_TOPIC] = 1;
-  serializeJson(doc, lwtMessage);
-  publishMessage(LWT_TOPIC, lwtMessage, true);
-  doc.remove(LWT_TOPIC);
-}
-
-/*** Method for sending messages for starting the alarm system ***/
-void startingAlarmSystemMessage() {
-  DynamicJsonDocument doc(1024);
-  char startMessage[128];
-  doc[DEVICE_ID] = "NodeMCU";
-  doc[STARTING] = 0;
-
-  serializeJson(doc, startMessage);
-  publishMessage(STARTING, startMessage, true);
-  doc.remove(STARTING);
-  startSent = 1;
-}
+void setup_wifi();
+void reconnect();
+void callback(char* topic, byte* payload, unsigned int length);
+void publishMessage(const char* topic, String payload , boolean retained);
+void movementReact();
+void startMovementDetector();
+void alarmNotActivated();
+void alarmActivated();
+void handleONMessage();
+void startingAlarmSystemMessage();
 
 /**** Application Initialisation Function******/
 void setup() {
@@ -260,32 +137,190 @@ void loop() {
 
   if (!client.connected()) reconnect(); // checking if client is connected
   client.loop();
-  DynamicJsonDocument doc(1024);
-  char mqtt_message[128];
+
   movementReact();  // react to movement
   handleONMessage();
-
-  if(starter) {
-    if (!startSent){
-      startingAlarmSystemMessage();
-    }
-
-
-    doc[DEVICE_ID] = "NodeMCU";
-    doc[MOVEMENT] = movement;
-
-    serializeJson(doc, mqtt_message);
-    publishMessage(MOVEMENT, mqtt_message, false);
-  } else {
-
-    doc[DEVICE_ID] = "NodeMCU";
-    doc[STARTING] = 1;
-
-    serializeJson(doc, mqtt_message);
-    publishMessage(STARTING, mqtt_message, true);
-  }
+  handlePoweringUpSystem();
 
   previousMovement = movement;
-
   delay(5000);
+}
+
+/************* Connect to WiFi ***********/
+void setup_wifi() {
+
+  delay(10);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  randomSeed(micros());
+
+}
+
+/************* Connect to MQTT Broker ***********/
+void reconnect() {
+  while (!client.connected()) {
+
+    Serial.print("Attempting MQTT connection...");
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    
+    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password, LWT_TOPIC, 1, true, LWT_MESSAGE)) {
+      Serial.println("connected");
+
+      client.subscribe(SOUND); 
+      defaultSoundMessage();
+      defaultStartMessage();
+
+    } else {
+      Serial.print(client.state());
+      delay(5000);
+    }
+  }
+}
+
+/***** Callback Method For Receiving MQTT Messages And Sound Control ****/
+
+void callback(char* topic, byte* payload, unsigned int length) {
+
+  for (int i = 0; i < length; i++) incomingMessage+=(char)payload[i];
+
+  if (incomingMessage.length() >=2) {
+    receivedMessage = incomingMessage[incomingMessage.length() - 2];
+    if( strcmp(topic, SOUND) == 0){
+        if (receivedMessage == '1') buzzerControl = HIGH;   // Turn the buzzer on
+        else buzzerControl = LOW;                           // Turn the buzzer off
+    }
+  } else {
+    Serial.println("ERROR. Wrong type of message received");
+  }
+}
+
+/**** Method for Publishing MQTT Messages **********/
+void publishMessage(const char* topic, String payload , boolean retained){
+  client.publish(topic, payload.c_str(), true);
+}
+
+/**** Method For LED and Buzzer Reaction To Movement *****/
+void movementReact() {
+  movement = digitalRead(sensorMovement);
+  if (movement == HIGH && starter == 0 && previousMovement == HIGH) {
+    startMovementDetector();
+  } else if (movement == HIGH && starter == 1) {
+    alarmActivated();
+  } else if (previousMovement == HIGH && movement == LOW && starter == 0) {
+    starter = 1;
+  } else if (movement == LOW && starter == 1) {
+    alarmNotActivated();
+  }
+}
+
+/*** Method For Starting The Alarm System - Buzzer and LED Reaction ***/
+void startMovementDetector() {
+  digitalWrite(buzzer, LOW);
+  for (int i = 0; i < 10; i++) {
+    digitalWrite(ledSensor, HIGH);
+    delay(100);
+    digitalWrite(ledSensor, LOW);
+    delay(100);
+  }
+}
+
+/*** Method For No Movement Detected - Buzzer and LED Reaction ***/
+void alarmNotActivated() {
+  digitalWrite(buzzer, LOW);
+  digitalWrite(ledSensor, LOW);
+}
+
+/*** Method For Activating The Alarm System - Buzzer and LED Reaction (After Start Mode) ***/
+void alarmActivated() {
+  for (int i = 0; i < 10; i++){
+    digitalWrite(ledSensor, HIGH);
+    digitalWrite(buzzer, buzzerControl);
+    delay(100);
+    digitalWrite(ledSensor, LOW);
+    digitalWrite(buzzer, LOW);
+    delay(100);
+  }
+}
+
+/*** Method For Sending ON Message TO MQTT - Device Is ON ***/
+void handleONMessage() {
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[LWT_TOPIC] = 1;
+  serializeJson(doc, mqtt_message);
+  publishMessage(LWT_TOPIC, mqtt_message, true);
+  doc.remove(DEVICE_ID);
+  doc.remove(LWT_TOPIC);
+}
+
+/*** Method for Publishing Message STARTING 0 When The Alarm System Is Beginning To Work ***/
+void alarmSystemMessageAfterStart() { 
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[STARTING] = 0;
+
+  serializeJson(doc, mqtt_message);
+  publishMessage(STARTING, mqtt_message, true);
+  doc.remove(STARTING);
+  doc.remove(DEVICE_ID);
+  startSent = 1;
+}
+
+/*** Method for when alarm system is already turned on ***/
+void alarmSystemStart() {
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[STARTING] = 1;
+
+  serializeJson(doc, mqtt_message);
+  publishMessage(STARTING, mqtt_message, true);
+  doc.remove(STARTING);
+  doc.remove(DEVICE_ID);
+}
+
+/*** Handle Powering Up System And Messages Management ***/
+void handlePoweringUpSystem() {
+  if(starter) {
+    if (!startSent){
+      alarmSystemMessageAfterStart();     //finished powering up, one message starting 0 confirms it
+    }
+    movementMessagePublished();           //when system is on and working and movement messages get published
+  } else {
+    alarmSystemStart();                   //when system is in the process of turning on a message starting 1 is published
+  }
+}
+
+/*** Movement Message Published When Device is ON And Working ***/
+void movementMessagePublished() {
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[MOVEMENT] = movement;
+
+  serializeJson(doc, mqtt_message);
+  publishMessage(MOVEMENT, mqtt_message, false); 
+  doc.remove(MOVEMENT);
+  doc.remove(DEVICE_ID);
+}
+
+/*** Establish default Sound Message Settings ***/
+void defaultSoundMessage() {
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[SOUND] = 1;
+
+  serializeJson(doc, mqtt_message);
+  publishMessage(SOUND, mqtt_message, true);
+  doc.remove(SOUND);
+  doc.remove(DEVICE_ID);
+}
+
+/*** Establish Default Start Settings Message ***/
+void defaultStartMessage() {
+  doc[DEVICE_ID] = "NodeMCU";
+  doc[STARTING] = 1;
+
+  serializeJson(doc, mqtt_message);
+  publishMessage(STARTING, mqtt_message, true);
+  doc.remove(STARTING);
+  doc.remove(DEVICE_ID);
 }
