@@ -1,5 +1,6 @@
 package com.example.wifi_alarm_system
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,6 +14,7 @@ class MyApp: Application() {
         createNotificationChannel()
     }
 
+    @SuppressLint("ObsoleteSdkInt")
     private fun createNotificationChannel(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             val channel = NotificationChannel(

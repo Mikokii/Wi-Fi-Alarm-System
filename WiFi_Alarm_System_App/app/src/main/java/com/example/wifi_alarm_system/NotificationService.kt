@@ -1,5 +1,6 @@
 package com.example.wifi_alarm_system
 
+import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -7,12 +8,10 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 
-class NotificationService(
-    private val context: Context
-) {
-
+class NotificationService( private val context: Context ) {
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+    @SuppressLint("ObsoleteSdkInt")
     fun showNotification(){
         val activityIntent = Intent(context, MainActivity::class.java)
         val activityPendingIntent = PendingIntent.getActivity(
@@ -29,7 +28,6 @@ class NotificationService(
 
         notificationManager.notify(1, notification)
     }
-
 
     companion object{
         const val CHANNEL_ID = "channel"

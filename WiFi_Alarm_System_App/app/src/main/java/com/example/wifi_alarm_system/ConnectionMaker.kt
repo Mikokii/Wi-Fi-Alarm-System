@@ -23,44 +23,24 @@ class ConnectionMaker {
     fun connectAndSubscribe(onMessageReceived: (String) -> Unit): String{
         return try {
             val connAckMessage: Mqtt5ConnAck = client.toBlocking().connect()
-            client.toAsync().subscribeWith()
-                .topicFilter("movement")
-                .callback { publish: Mqtt5Publish ->
-                    val message = String(publish.payloadAsBytes)
-                    onMessageReceived(message)
-                }
-                .send()
-
-            client.toAsync().subscribeWith()
-                .topicFilter("starting")
-                .callback { publish: Mqtt5Publish ->
-                    val message = String(publish.payloadAsBytes)
-                    onMessageReceived(message)
-                }
-                .send()
-
-            client.toAsync().subscribeWith()
-                .topicFilter("ON")
-                .callback { publish: Mqtt5Publish ->
-                    val message = String(publish.payloadAsBytes)
-                    onMessageReceived(message)
-                }
-                .send()
-
-            client.toAsync().subscribeWith()
-                .topicFilter("sound")
-                .callback { publish: Mqtt5Publish ->
-                    val message = String(publish.payloadAsBytes)
-                    onMessageReceived(message)
-                }
-                .send()
-
+            subscribeToTopic("movement", onMessageReceived)
+            subscribeToTopic("starting", onMessageReceived)
+            subscribeToTopic("ON", onMessageReceived)
+            subscribeToTopic("sound", onMessageReceived)
             connAckMessage.reasonCode.toString()
         } catch (e: Exception){
             e.message ?: "Unknown error"
         }
     }
-
+    private fun subscribeToTopic(topic: String, onMessageReceived: (String) -> Unit){
+        client.toAsync().subscribeWith()
+            .topicFilter(topic)
+            .callback { publish: Mqtt5Publish ->
+                val message = String(publish.payloadAsBytes)
+                onMessageReceived(message)
+            }
+            .send()
+    }
     fun publishMessage(topic: String, message: String): String {
         return try {
             val publishMessage = Mqtt5Publish.builder()
