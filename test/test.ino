@@ -14,7 +14,7 @@ int movement;
 int previousMovement = HIGH;
 
 /**** Buzzer Settings *****/
-const int buzzer = 0;
+const int buzzer = 14;
 int buzzerControl = HIGH; //for adjustement depending on the message
 
 /**** LED Pins *******/
