@@ -8,8 +8,13 @@
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 
+/*** Push Buttons ***/
+const int buttonLeft = 12;
+const int buttonRight = 13;
+int count = 0;
+
 /**** Movement Detector Settings *****/
-const int sensorMovement = 2; 
+const int sensorMovement = 0; 
 int movement;
 int previousMovement = HIGH;
 
@@ -113,6 +118,8 @@ void startingAlarmSystemMessage();
 /**** Application Initialisation Function******/
 void setup() {
 
+  pinMode(buttonLeft, INPUT_PULLUP);
+  pinMode(buttonRight, INPUT_PULLUP);
   pinMode(ledSensor, OUTPUT); //set up LED
   pinMode(ledActive, OUTPUT); //set up LED
   pinMode(buzzer, OUTPUT);
@@ -135,15 +142,25 @@ void setup() {
 /******** Main Function *************/
 void loop() {
 
-  if (!client.connected()) reconnect(); // checking if client is connected
-  client.loop();
+  if (count == 500000) {
+    if (!client.connected()) reconnect(); // checking if client is connected
+    client.loop();
 
-  movementReact();  // react to movement
-  handleONMessage();
-  handlePoweringUpSystem();
+    movementReact();  // react to movement
+    handleONMessage();
+    handlePoweringUpSystem();
 
-  previousMovement = movement;
-  delay(5000);
+    previousMovement = movement;
+    count = 0;
+  }
+
+  if(digitalRead(buttonLeft) == LOW || digitalRead(buttonRight) == LOW) {
+    digitalWrite(ledSensor, HIGH);
+  } else {
+    digitalWrite(ledSensor, LOW);
+  }
+
+  count++;
 }
 
 /************* Connect to WiFi ***********/
