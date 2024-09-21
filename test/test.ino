@@ -8,13 +8,18 @@
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 
-/*** Push Buttons ***/
-const int buttonLeft = 12;
-const int buttonRight = 13;
-int count = 0;
+/**** Time Settings ****/
+unsigned long previousMillis = 0;  // Stores the last time the event occurred
+const long interval = 10000;
+
+/*** Buttons Settings ****/
+// Hidden
+
+/**** Password Settings ****/
+// Hidden
 
 /**** Movement Detector Settings *****/
-const int sensorMovement = 0; 
+const int sensorMovement = 2; 
 int movement;
 int previousMovement = HIGH;
 
@@ -48,11 +53,11 @@ char mqtt_message[128];
 const char* LWT_TOPIC = "ON";
 const char* LWT_MESSAGE = "{\"deviceID\":\"NodeMCU\",\"ON\":0}";
 
-/****** WiFi Connection Details *******/
+/****** WiFi Connection Details (Hidden) *******/
 const char* ssid = "";
 const char* password = "";
 
-/******* MQTT Broker Connection Details *******/
+/******* MQTT Broker Connection Details (Hidden) *******/
 const char* mqtt_server = "";
 const char* mqtt_username = "";
 const char* mqtt_password = "";
@@ -114,6 +119,10 @@ void alarmNotActivated();
 void alarmActivated();
 void handleONMessage();
 void startingAlarmSystemMessage();
+void handleButtons();
+void handleLeftButton();
+void handleRightButton();
+bool checkPassword();
 
 /**** Application Initialisation Function******/
 void setup() {
@@ -141,8 +150,9 @@ void setup() {
 
 /******** Main Function *************/
 void loop() {
-
-  if (count == 500000) {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;  // Reset the timer
     if (!client.connected()) reconnect(); // checking if client is connected
     client.loop();
 
@@ -151,16 +161,8 @@ void loop() {
     handlePoweringUpSystem();
 
     previousMovement = movement;
-    count = 0;
   }
-
-  if(digitalRead(buttonLeft) == LOW || digitalRead(buttonRight) == LOW) {
-    digitalWrite(ledSensor, HIGH);
-  } else {
-    digitalWrite(ledSensor, LOW);
-  }
-
-  count++;
+  handleButtons();
 }
 
 /************* Connect to WiFi ***********/
@@ -241,8 +243,10 @@ void startMovementDetector() {
   for (int i = 0; i < 10; i++) {
     digitalWrite(ledSensor, HIGH);
     delay(100);
+    handleButtons();
     digitalWrite(ledSensor, LOW);
     delay(100);
+    handleButtons();
   }
 }
 
@@ -258,9 +262,11 @@ void alarmActivated() {
     digitalWrite(ledSensor, HIGH);
     digitalWrite(buzzer, buzzerControl);
     delay(100);
+    handleButtons();
     digitalWrite(ledSensor, LOW);
     digitalWrite(buzzer, LOW);
     delay(100);
+    handleButtons();
   }
 }
 
@@ -340,4 +346,20 @@ void defaultStartMessage() {
   publishMessage(STARTING, mqtt_message, true);
   doc.remove(STARTING);
   doc.remove(DEVICE_ID);
+}
+
+void handleButtons() {
+  // Hidden
+}
+
+void handleLeftButton() {
+  // Hidden
+}
+
+void handleRightButton() {
+  // Hidden
+}
+
+bool checkPassword() {
+  // Hidden
 }
