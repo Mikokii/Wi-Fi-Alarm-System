@@ -19,7 +19,7 @@ const long interval = 10000;
 // Hidden
 
 /**** Movement Detector Settings *****/
-const int sensorMovement = 2; 
+const int sensorMovement = 5; 
 int movement;
 int previousMovement = HIGH;
 
@@ -28,7 +28,7 @@ const int buzzer = 14;
 int buzzerControl = HIGH; //for adjustement depending on the message
 
 /**** LED Pins *******/
-const int ledSensor = 5; //Set LED pin as GPIO5
+const int ledSensor = 15; //Set LED pin as GPIO5
 const int ledActive = 4; // Set LED pin as GPIO4
 
 /**** Activating Alarm System ****/

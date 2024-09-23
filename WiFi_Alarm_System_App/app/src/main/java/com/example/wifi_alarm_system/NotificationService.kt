@@ -12,7 +12,7 @@ class NotificationService( private val context: Context ) {
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     @SuppressLint("ObsoleteSdkInt")
-    fun showNotification(){
+    fun showActivationNotification(){
         val activityIntent = Intent(context, MainActivity::class.java)
         val activityPendingIntent = PendingIntent.getActivity(
             context,
@@ -27,6 +27,24 @@ class NotificationService( private val context: Context ) {
             .build()
 
         notificationManager.notify(1, notification)
+    }
+
+    @SuppressLint("ObsoleteSdkInt")
+    fun showOffNotification(){
+        val activityIntent = Intent(context, MainActivity::class.java)
+        val activityPendingIntent = PendingIntent.getActivity(
+            context,
+            2,
+            activityIntent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.baseline_warning_24)
+            .setContentTitle("!!! Device switched OFF !!!")
+            .setContentIntent(activityPendingIntent)
+            .build()
+
+        notificationManager.notify(2, notification) // Different notification ID
     }
 
     companion object{

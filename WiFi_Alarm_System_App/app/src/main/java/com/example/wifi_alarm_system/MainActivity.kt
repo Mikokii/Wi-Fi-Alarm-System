@@ -41,11 +41,13 @@ import com.example.wifi_alarm_system.ui.theme.WiFi_Alarm_SystemTheme
 import org.json.JSONObject
 import com.example.wifi_alarm_system.Messages.connectionError
 import com.example.wifi_alarm_system.Messages.connectionResult
+import com.example.wifi_alarm_system.Messages.lastOnMessage
 import com.example.wifi_alarm_system.Messages.movementMessages
 import com.example.wifi_alarm_system.Messages.onMessage
 import com.example.wifi_alarm_system.Messages.soundMessage
 import com.example.wifi_alarm_system.Messages.startingMessage
 import java.util.UUID
+import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
     private val connectionMaker = ConnectionMaker()
@@ -142,6 +144,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun updateOnMessage(message: String){
         if (message.length >= 2) {
+            lastOnMessage = onMessage
             onMessage = message[message.length - 2].toString().toInt()
             connectionError = false
         } else {
@@ -159,7 +162,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun HandleMessages(){
-
+        val service = NotificationService(applicationContext)
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
@@ -177,12 +180,17 @@ class MainActivity : ComponentActivity() {
                     }
                 } else if (onMessage == 0){
                     Text(text = "Device is OFF")
+                    if (lastOnMessage == 1){
+                        service.showOffNotification()
+                        vibrateThreeTimes()
+                    }
                 } else {
                     Text(text = "Device is not connected")
                 }
             }
         }
     }
+
     @Composable
     private fun HandleMovementMessages(){
         val service = NotificationService(applicationContext)
@@ -195,8 +203,10 @@ class MainActivity : ComponentActivity() {
         }
         if (movementMessages.isNotEmpty()) {
             if (movementMessages.last() == 1) {
-                service.showNotification()
-                vibrate()
+                service.showActivationNotification()
+                for (i in 1..3){
+                    vibrate()
+                }
             }
         }
     }
@@ -258,6 +268,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     private fun publishSoundMessage(){
         soundMessage = soundMessage xor 1
         val json = JSONObject()
@@ -266,6 +277,7 @@ class MainActivity : ComponentActivity() {
         val mqttMessage = json.toString()
         connectionMaker.publishMessage("sound", mqttMessage)
     }
+
     private fun getUUID(): String? {
         return try {
             val deviceId = UUID.randomUUID().toString()
@@ -283,6 +295,15 @@ class MainActivity : ComponentActivity() {
         }
         else{
             vibrator.vibrate(500)
+        }
+    }
+
+    private fun vibrateThreeTimes() {
+        CoroutineScope(Dispatchers.Main).launch{
+            for (i in 1..3){
+                vibrate()
+                delay(1000)
+            }
         }
     }
 }

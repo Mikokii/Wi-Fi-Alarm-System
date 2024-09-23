@@ -10,6 +10,7 @@ object Messages {
     var movementMessages by mutableStateOf(listOf<Int>())
     var startingMessage by mutableIntStateOf(-1)
     var onMessage by mutableIntStateOf(-1)
+    var lastOnMessage by mutableIntStateOf(-1)
     var connectionResult by mutableStateOf("")
     var connectionError by mutableStateOf(false)
     var soundMessage by mutableIntStateOf(-1)
