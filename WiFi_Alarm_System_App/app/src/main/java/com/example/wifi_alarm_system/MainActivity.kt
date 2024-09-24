@@ -181,8 +181,7 @@ class MainActivity : ComponentActivity() {
                 } else if (onMessage == 0){
                     Text(text = "Device is OFF")
                     if (lastOnMessage == 1){
-                        service.showOffNotification()
-                        vibrateThreeTimes()
+                        vibrateThreeTimes(false)
                     }
                 } else {
                     Text(text = "Device is not connected")
@@ -203,10 +202,7 @@ class MainActivity : ComponentActivity() {
         }
         if (movementMessages.isNotEmpty()) {
             if (movementMessages.last() == 1) {
-                service.showActivationNotification()
-                for (i in 1..3){
-                    vibrate()
-                }
+                vibrate(true)
             }
         }
     }
@@ -288,20 +284,16 @@ class MainActivity : ComponentActivity() {
     }
 
     @SuppressLint("ObsoleteSdkInt")
-    private fun vibrate(){
-        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        if (Build.VERSION.SDK_INT >= 26){
-            vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-        }
-        else{
-            vibrator.vibrate(500)
-        }
+    private fun vibrate(alarmActivated: Boolean){
+        val intent = Intent(this, VibrationService::class.java)
+        intent.putExtra("isAlarmActivated", alarmActivated) // or false based on your condition
+        startForegroundService(intent) // Start the service
     }
 
-    private fun vibrateThreeTimes() {
+    private fun vibrateThreeTimes(alarmActivated: Boolean) {
         CoroutineScope(Dispatchers.Main).launch{
             for (i in 1..3){
-                vibrate()
+                vibrate(alarmActivated)
                 delay(1000)
             }
         }
