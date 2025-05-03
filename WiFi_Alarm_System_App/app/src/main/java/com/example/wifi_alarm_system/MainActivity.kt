@@ -15,6 +15,7 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +25,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,15 +59,33 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WiFi_Alarm_SystemTheme {
+            var isDarkTheme by remember { mutableStateOf(false) }
+            WiFi_Alarm_SystemTheme(darkTheme = isDarkTheme) {
                 HandleConnectionButton()
                 HandleMessages()
                 HandleSettingsButton()
                 HandleSoundButton()
+                DarkModeButton(
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = { isDarkTheme = !isDarkTheme }
+                )
             }
+
         }
     }
-
+    @Composable
+    fun DarkModeButton(
+        isDarkTheme: Boolean,
+        onToggleTheme: () -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        Button(
+            onClick = onToggleTheme,
+            modifier = modifier
+        ) {
+            Text(if (isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode")
+        }
+    }
     @Composable
     private fun HandleConnectionButton(){
         val context = LocalContext.current
