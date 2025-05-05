@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -15,30 +16,41 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.wifi_alarm_system.ui.theme.WiFi_Alarm_SystemTheme
@@ -59,33 +71,85 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var isDarkTheme by remember { mutableStateOf(false) }
-            WiFi_Alarm_SystemTheme(darkTheme = isDarkTheme) {
-                HandleConnectionButton()
-                HandleMessages()
-                HandleSettingsButton()
-                HandleSoundButton()
-                DarkModeButton(
-                    isDarkTheme = isDarkTheme,
-                    onToggleTheme = { isDarkTheme = !isDarkTheme }
-                )
-            }
+            val prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val isDarkThemeState = rememberSaveable { mutableStateOf(prefs.getBoolean("isDarkTheme", true)) }
+            WiFi_Alarm_SystemTheme(darkTheme = isDarkThemeState.value) {
+                Scaffold(modifier = Modifier.fillMaxSize(),
+                         bottomBar = {
+                             FooterButtons(isDarkThemeState, prefs)
+                         }
+                    ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "WiFi Alarm System",
+                                style = MaterialTheme.typography.headlineMedium,
+                                modifier = Modifier.padding(top = 32.dp, bottom = 24.dp),
+                                fontWeight = FontWeight.Bold
+                            )
 
+                        }
+                        HandleConnectionButton()
+                        HandleMessages()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                    }
+
+                }
+            }
+        }
+
+    }
+
+    @Composable
+    private fun FooterButtons(
+            isDarkThemeState: MutableState<Boolean>,
+            prefs: SharedPreferences
+    ){
+        val isDarkTheme = isDarkThemeState.value
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HandleSettingsButton()
+            HandleSoundButton()
+            DarkModeButton(
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = {
+                    isDarkThemeState.value = !isDarkTheme
+                    prefs.edit().putBoolean("isDarkTheme", isDarkThemeState.value).apply()
+                }
+            )
         }
     }
+
     @Composable
     fun DarkModeButton(
         isDarkTheme: Boolean,
-        onToggleTheme: () -> Unit,
-        modifier: Modifier = Modifier
+        onToggleTheme: () -> Unit
     ) {
         Button(
-            onClick = onToggleTheme,
-            modifier = modifier
+            onClick = onToggleTheme
         ) {
             Text(if (isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode")
         }
     }
+
     @Composable
     private fun HandleConnectionButton(){
         val context = LocalContext.current
@@ -136,6 +200,7 @@ class MainActivity : ComponentActivity() {
             }
 
         }
+
     @Composable
     private fun DisplayConnectionResult(){
         // Display the connection result
@@ -146,6 +211,8 @@ class MainActivity : ComponentActivity() {
             Text(text = "Connection Result: $connectionResult")
         }
     }
+
+
     private fun updateMovementMessages(message: String) {
         if (message.length >= 2) {
             movementMessages =
@@ -185,28 +252,41 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun HandleMessages(){
         val service = NotificationService(applicationContext)
+        val textColor = MaterialTheme.colorScheme.onPrimary;
         Box(modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .absoluteOffset(0.dp, 100.dp),
+            .padding(16.dp),
             contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (connectionError){
-                    Text(text = "ERROR")
-                } else if(onMessage == 1){
-                    Text(text = "Device is ON")
-                    if (startingMessage == 1){
-                        Text(text = "Alarm system is starting")
+            Box(
+                modifier = Modifier
+                    .size(width = 250.dp, height = 150.dp)
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
+                    .padding(24.dp)
+                    .clip(RoundedCornerShape(32.dp))
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (connectionError) {
+                        Text(text = "ERROR",
+                            color = textColor)
+                    } else if (onMessage == 1) {
+                        Text(text = "Device is ON",
+                            color = textColor)
+                        if (startingMessage == 1) {
+                            Text(text = "Alarm system is starting",
+                                color = textColor)
+                        } else {
+                            HandleMovementMessages()
+                        }
+                    } else if (onMessage == 0) {
+                        Text(text = "Device is OFF",
+                            color = textColor)
+                        if (lastOnMessage == 1) {
+                            vibrateThreeTimes(false)
+                        }
                     } else {
-                        HandleMovementMessages()
+                        Text(text = "Device is not connected",
+                            color = textColor)
                     }
-                } else if (onMessage == 0){
-                    Text(text = "Device is OFF")
-                    if (lastOnMessage == 1){
-                        vibrateThreeTimes(false)
-                    }
-                } else {
-                    Text(text = "Device is not connected")
                 }
             }
         }
@@ -231,58 +311,64 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun HandleSettingsButton(){
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 16.dp, start = 32.dp), // Adjust the bottom padding as needed
-            contentAlignment = Alignment.BottomStart // Align content at the bottom and center horizontally
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = {
-                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                        putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                    }
-                    startActivity(intent)
-                }) {
-                    Icon(painter = painterResource(
-                        id = R.drawable.baseline_settings_24),
-                        contentDescription = "Notification Settings",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+        Button(onClick = {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
             }
+            startActivity(intent)
+        })
+        {
+            Icon(painter = painterResource(
+                id = R.drawable.baseline_settings_24),
+                contentDescription = "Notification Settings",
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 
     @Composable
     private fun HandleSoundButton(){
-        if (connectionResult.isNotEmpty() && startingMessage == 0 && onMessage == 1) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 16.dp, end = 32.dp), // Adjust the padding as needed
-                contentAlignment = Alignment.BottomEnd // Align content
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Button(onClick = {
-                        publishSoundMessage()
-                    }) {
-                        if (soundMessage == 1){
-                            Icon(painter = painterResource(
-                                id = R.drawable.baseline_volume_up_24),
-                                contentDescription = "Sound ON",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        else {
-                            Icon(painter = painterResource(
-                                id = R.drawable.baseline_volume_off_24),
-                                contentDescription = "Sound OFF",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
+        var isActive = false;
+        Button(onClick = {
+                if (isActive) {
+                    publishSoundMessage()
                 }
+             },
+             colors = ButtonDefaults.buttonColors(
+             containerColor = if (isActive) MaterialTheme.colorScheme.primary else Color.Gray)
+        )
+        {
+            if (connectionResult.isNotEmpty() && startingMessage == 0 && onMessage == 1) {
+                isActive = true;
+
+                if (soundMessage == 1) {
+                    Icon(
+                        painter = painterResource(
+                            id = R.drawable.baseline_volume_up_24
+                        ),
+                        contentDescription = "Sound ON",
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(
+                            id = R.drawable.baseline_volume_off_24
+                        ),
+                        contentDescription = "Sound OFF",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            else
+            {
+                isActive = false;
+                Icon(
+                    painter = painterResource(
+                        id = R.drawable.baseline_volume_off_24
+                    ),
+                    contentDescription = "Sound OFF",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }

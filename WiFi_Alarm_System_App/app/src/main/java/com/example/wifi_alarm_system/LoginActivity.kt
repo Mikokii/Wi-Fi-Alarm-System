@@ -6,7 +6,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -16,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +35,8 @@ class LoginActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var isDarkTheme by remember { mutableStateOf(true) }
+            val prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            var isDarkTheme by remember { mutableStateOf(prefs.getBoolean("isDarkTheme", false)) }
 
             WiFi_Alarm_SystemTheme(darkTheme = isDarkTheme) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -39,7 +45,6 @@ class LoginActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -55,9 +60,13 @@ class LoginActivity : ComponentActivity() {
                             )
                             LoginScreen()
                         }
+
                         DarkModeButton(
                             isDarkTheme = isDarkTheme,
-                            onToggleTheme = { isDarkTheme = !isDarkTheme },
+                            onToggleTheme = {
+                                isDarkTheme = !isDarkTheme
+                                prefs.edit().putBoolean("isDarkTheme", isDarkTheme).apply()
+                            },
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(16.dp)
@@ -70,6 +79,23 @@ class LoginActivity : ComponentActivity() {
     }
 }
 
+//@Composable
+//fun AnimatedBackgroundApp() {
+//    var isToggled by remember { mutableStateOf(false) }
+//
+//    val backgroundColor by animateColorAsState(
+//        targetValue = if (isToggled) Color(0xFFBBDEFB) else Color(0xFFB2DFDB),
+//        animationSpec = tween(durationMillis = 1000),
+//        label = "BackgroundColor"
+//    )
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(backgroundColor)
+//            .clickable { isToggled = !isToggled }
+//    )
+//}
 
 @Composable
 fun DarkModeButton(
@@ -163,8 +189,6 @@ fun LoginScreen(modifier: Modifier = Modifier) {
         ) {
             Text(text = "Log In")
         }
-
-
     }
 }
 
