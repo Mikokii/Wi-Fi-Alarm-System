@@ -8,8 +8,6 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -28,14 +26,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -75,6 +72,9 @@ class MainActivity : ComponentActivity() {
             val isDarkThemeState = rememberSaveable { mutableStateOf(prefs.getBoolean("isDarkTheme", true)) }
             WiFi_Alarm_SystemTheme(darkTheme = isDarkThemeState.value) {
                 Scaffold(modifier = Modifier.fillMaxSize(),
+                         topBar = {
+                             WiFiAlarmLogo()
+                         },
                          bottomBar = {
                              FooterButtons(isDarkThemeState, prefs)
                          }
@@ -82,34 +82,45 @@ class MainActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        Column(
+                            .padding(innerPadding),
+                        contentAlignment = Alignment.Center
+                    ) {Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.TopCenter)
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .clip(RoundedCornerShape(32.dp))
+                                .width(300.dp)
+                                .height(400.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .absoluteOffset(0.dp, (-40).dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "WiFi Alarm System",
-                                style = MaterialTheme.typography.headlineMedium,
-                                modifier = Modifier.padding(top = 32.dp, bottom = 24.dp),
-                                fontWeight = FontWeight.Bold
-                            )
 
+                                HandleConnectionButton()
+                                DisplayConnectionResult()
+                                HandleMessages()
                         }
-                        HandleConnectionButton()
-                        HandleMessages()
-                        Spacer(modifier = Modifier.height(16.dp))
-
                     }
-
                 }
             }
         }
 
     }
+    @Composable
+    fun WiFiAlarmLogo() {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "WiFi Alarm System",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = 32.dp, bottom = 24.dp),
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+
 
     @Composable
     private fun FooterButtons(
@@ -146,7 +157,21 @@ class MainActivity : ComponentActivity() {
         Button(
             onClick = onToggleTheme
         ) {
-            Text(if (isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode")
+            if (isDarkTheme){
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_light_mode),
+                    contentDescription = "Toggle Theme",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            else {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_dark_mode),
+                    contentDescription = "Toggle Theme",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
         }
     }
 
@@ -171,7 +196,7 @@ class MainActivity : ComponentActivity() {
 
         Box(modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(24.dp)
             .absoluteOffset(0.dp, (-100).dp),
             contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -179,10 +204,12 @@ class MainActivity : ComponentActivity() {
                     Text(text = "Connect and Subscribe")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                DisplayConnectionResult()
+
             }
         }
+
     }
+
     private fun handleConnectionButtonAction(permissionLauncher: ManagedActivityResultLauncher<String, Boolean>): () -> Unit =
         {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -202,15 +229,28 @@ class MainActivity : ComponentActivity() {
         }
 
     @Composable
-    private fun DisplayConnectionResult(){
-        // Display the connection result
-        if (connectionResult.isEmpty()) {
-            Text(text = "No Connection")
+    private fun DisplayConnectionResult() {
+        val text = if (connectionResult.isEmpty()) {
+            "No Connection"
+        } else {
+            "Connection Result:\n $connectionResult"
         }
-        else {
-            Text(text = "Connection Result: $connectionResult")
+        Box(modifier = Modifier
+                .padding(30.dp)
+                .width(250.dp)
+                .height(80.dp)
+                .absoluteOffset(0.dp, (150).dp)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp)),
+            contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = text,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     }
+
 
 
     private fun updateMovementMessages(message: String) {
@@ -253,40 +293,47 @@ class MainActivity : ComponentActivity() {
     private fun HandleMessages(){
         val service = NotificationService(applicationContext)
         val textColor = MaterialTheme.colorScheme.onPrimary;
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-            contentAlignment = Alignment.Center) {
-            Box(
-                modifier = Modifier
-                    .size(width = 250.dp, height = 150.dp)
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
-                    .padding(24.dp)
-                    .clip(RoundedCornerShape(32.dp))
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (connectionError) {
-                        Text(text = "ERROR",
-                            color = textColor)
-                    } else if (onMessage == 1) {
-                        Text(text = "Device is ON",
-                            color = textColor)
-                        if (startingMessage == 1) {
-                            Text(text = "Alarm system is starting",
-                                color = textColor)
-                        } else {
-                            HandleMovementMessages()
-                        }
-                    } else if (onMessage == 0) {
-                        Text(text = "Device is OFF",
-                            color = textColor)
-                        if (lastOnMessage == 1) {
-                            vibrateThreeTimes(false)
-                        }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(32.dp))
+                .width(250.dp)
+                .height(100.dp)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (connectionError) {
+                    Text(
+                        text = "ERROR",
+                        color = textColor
+                    )
+                } else if (onMessage == 1) {
+                    Text(
+                        text = "Device is ON",
+                        color = textColor
+                    )
+                    if (startingMessage == 1) {
+                        Text(
+                            text = "Alarm system is starting",
+                            color = textColor
+                        )
                     } else {
-                        Text(text = "Device is not connected",
-                            color = textColor)
+                        HandleMovementMessages()
                     }
+                } else if (onMessage == 0) {
+                    Text(
+                        text = "Device is OFF",
+                        color = textColor
+                    )
+                    if (lastOnMessage == 1) {
+                        vibrateThreeTimes(false)
+                    }
+                } else {
+                    Text(
+                        text = "Device is not connected",
+                        color = textColor
+                    )
                 }
             }
         }
