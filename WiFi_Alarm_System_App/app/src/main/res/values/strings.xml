@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">WiFi_Alarm_System</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_database">Database</string>
 </resources>

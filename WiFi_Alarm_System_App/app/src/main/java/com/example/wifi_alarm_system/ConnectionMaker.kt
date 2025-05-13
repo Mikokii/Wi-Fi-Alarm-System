@@ -11,15 +11,16 @@ import java.util.UUID
 class ConnectionMaker {
     private val client: Mqtt5Client = Mqtt5Client.builder()
         .identifier(UUID.randomUUID().toString())
-        .serverHost("")
-        .serverPort(8883)
+        .serverHost("")      //MQTT SERVER
+        .serverPort(8883)                                                       //PORT
         .sslWithDefaultConfig()
         .simpleAuth()
-        .username("")
-        .password("".toByteArray())
+        .username("")                                                       //LOGIN FOR MQTT SERVICE
+        .password("".toByteArray())                                  //PASSWORD FOR MQTT SERVICE
         .applySimpleAuth()
         .build()
 
+    //SUBSCRIBE TO TOPICS WITH ESSENTIAL NOTIFICATIONS
     fun connectAndSubscribe(onMessageReceived: (String) -> Unit): String{
         return try {
             val connAckMessage: Mqtt5ConnAck = client.toBlocking().connect()
@@ -32,6 +33,8 @@ class ConnectionMaker {
             e.message ?: "Unknown error"
         }
     }
+
+
     private fun subscribeToTopic(topic: String, onMessageReceived: (String) -> Unit){
         client.toAsync().subscribeWith()
             .topicFilter(topic)
@@ -41,6 +44,8 @@ class ConnectionMaker {
             }
             .send()
     }
+
+    //PUBLISH MESSAGES FOR MQTT SERVER
     fun publishMessage(topic: String, message: String): String {
         return try {
             val publishMessage = Mqtt5Publish.builder()
@@ -56,5 +61,4 @@ class ConnectionMaker {
             e.message ?: "Failed to publish message"
         }
     }
-
 }

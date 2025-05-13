@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Main App Theme -->
     <style name="Theme.WiFi_Alarm_System" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash Screen Theme -->
+    <style name="Theme.MyApp.Splash" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/icon2</item>
+        <item name="postSplashScreenTheme">@style/Theme.WiFi_Alarm_System</item>
+    </style>
+
 </resources>

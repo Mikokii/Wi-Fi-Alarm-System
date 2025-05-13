@@ -15,6 +15,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,10 +47,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.wifi_alarm_system.ui.theme.WiFi_Alarm_SystemTheme
 import org.json.JSONObject
@@ -59,17 +64,16 @@ import com.example.wifi_alarm_system.Messages.movementMessages
 import com.example.wifi_alarm_system.Messages.onMessage
 import com.example.wifi_alarm_system.Messages.soundMessage
 import com.example.wifi_alarm_system.Messages.startingMessage
-import java.util.UUID
+import com.example.wifi_alarm_system.SharedResources.connectionMaker
 import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
-    private val connectionMaker = ConnectionMaker()
-    private val deviceUUID = getUUID()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-            val isDarkThemeState = rememberSaveable { mutableStateOf(prefs.getBoolean("isDarkTheme", true)) }
+            val isDarkThemeState = rememberSaveable { mutableStateOf(prefs.getBoolean("isDarkTheme", true))}
             WiFi_Alarm_SystemTheme(darkTheme = isDarkThemeState.value) {
                 Scaffold(modifier = Modifier.fillMaxSize(),
                          topBar = {
@@ -84,16 +88,17 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding),
                         contentAlignment = Alignment.Center
-                    ) {Box(
+
+                    ) {
+                        Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(32.dp))
                                 .width(300.dp)
                                 .height(400.dp)
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .absoluteOffset(0.dp, (-40).dp),
+                                .absoluteOffset(0.dp, (-45).dp),
                             contentAlignment = Alignment.Center
                         ) {
-
                                 HandleConnectionButton()
                                 DisplayConnectionResult()
                                 HandleMessages()
@@ -118,60 +123,6 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.padding(top = 32.dp, bottom = 24.dp),
                 fontWeight = FontWeight.Bold
             )
-        }
-    }
-
-
-    @Composable
-    private fun FooterButtons(
-            isDarkThemeState: MutableState<Boolean>,
-            prefs: SharedPreferences
-    ){
-        val isDarkTheme = isDarkThemeState.value
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HandleSettingsButton()
-            HandleSoundButton()
-            DarkModeButton(
-                isDarkTheme = isDarkTheme,
-                onToggleTheme = {
-                    isDarkThemeState.value = !isDarkTheme
-                    prefs.edit().putBoolean("isDarkTheme", isDarkThemeState.value).apply()
-                }
-            )
-        }
-    }
-
-    @Composable
-    fun DarkModeButton(
-        isDarkTheme: Boolean,
-        onToggleTheme: () -> Unit
-    ) {
-        Button(
-            onClick = onToggleTheme
-        ) {
-            if (isDarkTheme){
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_light_mode),
-                    contentDescription = "Toggle Theme",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            else {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_dark_mode),
-                    contentDescription = "Toggle Theme",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
         }
     }
 
@@ -200,8 +151,14 @@ class MainActivity : ComponentActivity() {
             .absoluteOffset(0.dp, (-100).dp),
             contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Button(onClick = handleConnectionButtonAction(permissionLauncher)) {
-                    Text(text = "Connect and Subscribe")
+                Button( onClick = handleConnectionButtonAction(permissionLauncher),
+                        modifier = Modifier
+                            .width(250.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =    Color(0xFFF5BA07),
+                        contentColor =      Color.White
+                    )) {
+                    Text(text = "CONNECT AND SUBSCRIBE")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -211,48 +168,65 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleConnectionButtonAction(permissionLauncher: ManagedActivityResultLauncher<String, Boolean>): () -> Unit =
-        {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-            // Connect and subscribe to the topic
-            connectionResult = connectionMaker.connectAndSubscribe { message ->
-                when {
-                    "movement" in message -> { updateMovementMessages(message) }
-                    "starting" in message -> { updateStartingMessage(message) }
-                    "ON" in message -> { updateOnMessage(message) }
-                    "sound" in message -> { updateSoundMessage(message) }
-                    else -> { connectionError = true }
-                }
-            }
-
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+        // Connect and subscribe to the topic
+        connectionResult = connectionMaker.connectAndSubscribe { message ->
+            when {
+                "movement" in message -> { updateMovementMessages(message) }
+                "starting" in message -> { updateStartingMessage(message) }
+                "ON" in message -> { updateOnMessage(message) }
+                "sound" in message -> { updateSoundMessage(message) }
+                else -> { connectionError = true }
+            }
+        }
+
+    }
 
     @Composable
     private fun DisplayConnectionResult() {
-        val text = if (connectionResult.isEmpty()) {
-            "No Connection"
+        // Text displayed in the box about connection status
+        val text = "CONNECTION RESULT"
+        val textResult = if (connectionResult.isEmpty()) {
+            "no connection"
         } else {
-            "Connection Result:\n $connectionResult"
+            " $connectionResult "
         }
+
         Box(modifier = Modifier
-                .padding(30.dp)
-                .width(250.dp)
-                .height(80.dp)
-                .absoluteOffset(0.dp, (150).dp)
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp)),
+            .width(250.dp)
+            .height(120.dp)
+            .absoluteOffset(0.dp, (150).dp)
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = text,
-                    color = MaterialTheme.colorScheme.onPrimary
+            //Display topic of the box "CONNECTION RESULT"
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(15.dp),
+            )
+            // Column displaying current state of the connection with the server
+            Column(modifier = Modifier
+                .padding(15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text (
+                    text = textResult,
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
     }
 
-
-
+    //UPDATE AN ARRAY WITH MOVEMENT STATUS FROM MQTT SERVER
     private fun updateMovementMessages(message: String) {
         if (message.length >= 2) {
             movementMessages =
@@ -263,6 +237,7 @@ class MainActivity : ComponentActivity() {
             connectionError = true
         }
     }
+
     private fun updateStartingMessage(message: String) {
         if (message.length >= 2) {
             startingMessage = message[message.length - 2].toString().toInt()
@@ -297,7 +272,7 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier
                 .clip(RoundedCornerShape(32.dp))
                 .width(250.dp)
-                .height(100.dp)
+                .height(120.dp)
                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp))
                 .padding(24.dp),
             contentAlignment = Alignment.Center
@@ -356,87 +331,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    private fun HandleSettingsButton(){
-        Button(onClick = {
-            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-            }
-            startActivity(intent)
-        })
-        {
-            Icon(painter = painterResource(
-                id = R.drawable.baseline_settings_24),
-                contentDescription = "Notification Settings",
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-
-    @Composable
-    private fun HandleSoundButton(){
-        var isActive = false;
-        Button(onClick = {
-                if (isActive) {
-                    publishSoundMessage()
-                }
-             },
-             colors = ButtonDefaults.buttonColors(
-             containerColor = if (isActive) MaterialTheme.colorScheme.primary else Color.Gray)
-        )
-        {
-            if (connectionResult.isNotEmpty() && startingMessage == 0 && onMessage == 1) {
-                isActive = true;
-
-                if (soundMessage == 1) {
-                    Icon(
-                        painter = painterResource(
-                            id = R.drawable.baseline_volume_up_24
-                        ),
-                        contentDescription = "Sound ON",
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(
-                            id = R.drawable.baseline_volume_off_24
-                        ),
-                        contentDescription = "Sound OFF",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            else
-            {
-                isActive = false;
-                Icon(
-                    painter = painterResource(
-                        id = R.drawable.baseline_volume_off_24
-                    ),
-                    contentDescription = "Sound OFF",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-    }
-
-    private fun publishSoundMessage(){
-        soundMessage = soundMessage xor 1
-        val json = JSONObject()
-        json.put("deviceID", "$deviceUUID")
-        json.put("sound", soundMessage)
-        val mqttMessage = json.toString()
-        connectionMaker.publishMessage("sound", mqttMessage)
-    }
-
-    private fun getUUID(): String? {
-        return try {
-            val deviceId = UUID.randomUUID().toString()
-            deviceId
-        } catch (e: Exception) {
-            null // Handle exception
-        }
-    }
 
     @SuppressLint("ObsoleteSdkInt")
     private fun vibrate(alarmActivated: Boolean){

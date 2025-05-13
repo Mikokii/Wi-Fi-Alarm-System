@@ -19,25 +19,29 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WiFi_Alarm_System">
         <activity
-            android:name=".LoginActivity"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.WiFi_Alarm_System">
+            android:theme="@style/Theme.MyApp.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.WiFi_Alarm_System">
+        </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.WiFi_Alarm_System" />
-
+            android:theme="@style/Theme.WiFi_Alarm_System">
+        </activity>
         <service
             android:name=".VibrationService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync">
+        </service>
     </application>
-
 </manifest>
