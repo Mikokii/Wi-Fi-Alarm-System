@@ -1,7 +1,14 @@
 package com.example.wifi_alarm_system
 
+import android.animation.ObjectAnimator
 import android.content.Intent
+import android.graphics.Outline
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewOutlineProvider
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -18,7 +25,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.delay
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
@@ -38,8 +48,24 @@ class SplashActivity : ComponentActivity() {
 
 @Composable
 fun SplashScreen(onTimeout: () -> Unit) {
+    val imageViewState = remember { mutableStateOf<ImageView?>(null) }
+
     LaunchedEffect(true) {
-        delay(200)
+        val view = imageViewState.value
+        if (view != null) {
+            val animatorX = ObjectAnimator.ofFloat(view, "scaleX", 0f, 0.5f).apply {
+                duration = 1000
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+            val animatorY = ObjectAnimator.ofFloat(view, "scaleY", 0f, 0.5f).apply {
+                duration = 1000
+                interpolator = AccelerateDecelerateInterpolator()
+            }
+
+            animatorX.start()
+            animatorY.start()
+        }
+        delay(1200)
         onTimeout()
     }
     val rotationDegree = animateFloatAsState(
@@ -55,13 +81,25 @@ fun SplashScreen(onTimeout: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(id = R.drawable.icon2),
-                contentDescription = "App Logo",
-                modifier = Modifier
-                    .size(150.dp)
-                    .graphicsLayer(rotationZ = rotationDegree.value)
-                    .clip(CircleShape)
+            AndroidView(
+                factory = {
+                    ImageView(it).apply {
+                        setImageResource(R.drawable.icon2)
+                        scaleX = 0f
+                        scaleY = 0f
+                        imageViewState.value = this
+                        layoutParams = ViewGroup.LayoutParams(200, 200)
+
+                        outlineProvider = object : ViewOutlineProvider() {
+                            override fun getOutline(view: View, outline: Outline) {
+                                val size = view.width.coerceAtMost(view.height)
+                                outline.setOval(0, 0, size, size)
+                            }
+                        }
+                        clipToOutline = true
+                    }
+                },
+                modifier = Modifier.size(250.dp)
             )
             Spacer(modifier = Modifier.height(70.dp))
             CircularProgressIndicator()
